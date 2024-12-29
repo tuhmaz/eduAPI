@@ -1,0 +1,324 @@
+{
+  "menu": [
+    {
+      "url": "/",
+      "name": "الرئيسية",
+      "icon": "menu-icon tf-icons ri-home-line",
+      "slug": "pages-home"
+    },
+    {
+      "url": "dashboard",
+      "name": "لوحة التحكم",
+      "icon": "menu-icon tf-icons ri-dashboard-line",
+      "slug": "dashboard"
+    },
+    {
+      "name": "المستخدمين",
+      "icon": "menu-icon tf-icons ri-team-line",
+      "slug": "app-users",
+      "permission": "manage users",
+      "submenu": [
+        {
+          "url": "dashboard/users",
+          "name": "جميع المستخدمين",
+          "slug": "app-users-all"
+        },
+        {
+          "url": "dashboard/users/create",
+          "name": "إضافة مستخدم جديد",
+          "slug": "app-users-create"
+        }
+      ]
+    },
+    {
+      "name": "الأدوار والصلاحيات",
+      "icon": "menu-icon tf-icons ri-shield-keyhole-line",
+      "slug": "app-access",
+      "permission": "manage permissions",
+      "submenu": [
+        {
+          "url": "dashboard/roles",
+          "name": "الأدوار",
+          "slug": "app-access-roles"
+        },
+        {
+          "url": "dashboard/permissions",
+          "name": "الصلاحيات",
+          "slug": "app-access-permission"
+        }
+      ]
+    },
+    {
+      "name": "المحتوى التعليمي",
+      "icon": "menu-icon tf-icons ri-book-open-line",
+      "slug": "app-educational",
+      "submenu": [
+        {
+          "name": "الفصول الدراسية",
+          "icon": "menu-icon tf-icons ri-building-2-line",
+          "slug": "app-classes",
+          "permission": "manage classes",
+          "submenu": [
+            {
+              "url": "dashboard/classes",
+              "name": "جميع الفصول",
+              "slug": "app-classes-all"
+            },
+            {
+              "url": "dashboard/classes/create",
+              "name": "إضافة فصل جديد",
+              "slug": "app-classes-create"
+            }
+          ]
+        },
+        {
+          "name": "المواد الدراسية",
+          "icon": "menu-icon tf-icons ri-book-line",
+          "slug": "app-subjects",
+          "permission": "manage subjects",
+          "submenu": [
+            {
+              "url": "dashboard/subjects",
+              "name": "جميع المواد",
+              "slug": "app-subjects-all"
+            },
+            {
+              "url": "dashboard/subjects/create",
+              "name": "إضافة مادة جديدة",
+              "slug": "app-subjects-create"
+            }
+          ]
+        },
+        {
+          "name": "الفصول",
+          "icon": "menu-icon tf-icons ri-calendar-line",
+          "slug": "app-semesters",
+          "permission": "manage semesters",
+          "submenu": [
+            {
+              "url": "dashboard/semesters",
+              "name": "جميع الفصول",
+              "slug": "app-semesters-all"
+            },
+            {
+              "url": "dashboard/semesters/create",
+              "name": "إضافة فصل جديد",
+              "slug": "app-semesters-create"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "المحتوى",
+      "icon": "menu-icon tf-icons ri-file-list-3-line",
+      "slug": "app-content",
+      "submenu": [
+        {
+          "name": "المقالات",
+          "icon": "menu-icon tf-icons ri-article-line",
+          "slug": "app-articles",
+          "permission": "manage articles",
+          "submenu": [
+            {
+              "url": "dashboard/articles",
+              "name": "جميع المقالات",
+              "slug": "app-articles-all"
+            },
+            {
+              "url": "dashboard/articles/create",
+              "name": "إضافة مقال جديد",
+              "slug": "app-articles-create"
+            }
+          ]
+        },
+        {
+          "name": "الملفات",
+          "icon": "menu-icon tf-icons ri-file-line",
+          "slug": "app-files",
+          "submenu": [
+            {
+              "url": "dashboard/files",
+              "name": "جميع الملفات",
+              "slug": "app-files-all"
+            },
+            {
+              "url": "dashboard/files/create",
+              "name": "إضافة ملف جديد",
+              "slug": "app-files-create"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "الأخبار",
+      "icon": "menu-icon tf-icons ri-newspaper-line",
+      "slug": "app-news",
+      "permission": "manage news",
+      "submenu": [
+        {
+          "url": "dashboard/news",
+          "name": "جميع الأخبار",
+          "slug": "app-news-all"
+        },
+        {
+          "url": "dashboard/news/create",
+          "name": "إضافة خبر جديد",
+          "slug": "app-news-create"
+        },
+        {
+          "name": "التصنيفات",
+          "icon": "menu-icon tf-icons ri-price-tag-line",
+          "slug": "app-categories",
+          "permission": "manage Categories",
+          "submenu": [
+            {
+              "url": "dashboard/categories",
+              "name": "جميع التصنيفات",
+              "slug": "app-categories-all"
+            },
+            {
+              "url": "dashboard/categories/create",
+              "name": "إضافة تصنيف جديد",
+              "slug": "app-categories-create"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "الرسائل",
+      "icon": "menu-icon tf-icons ri-message-2-line",
+      "slug": "app-messages",
+      "submenu": [
+        {
+          "url": "dashboard/messages",
+          "name": "صندوق الوارد",
+          "slug": "app-messages-inbox"
+        },
+        {
+          "url": "dashboard/messages/compose",
+          "name": "إنشاء رسالة",
+          "slug": "app-messages-compose"
+        },
+        {
+          "url": "dashboard/messages/sent",
+          "name": "الرسائل المرسلة",
+          "slug": "app-messages-sent"
+        },
+        {
+          "url": "dashboard/messages/important",
+          "name": "الرسائل المهمة",
+          "slug": "app-messages-important"
+        },
+        {
+          "url": "dashboard/messages/drafts",
+          "name": "المسودات",
+          "slug": "app-messages-drafts"
+        },
+        {
+          "url": "dashboard/messages/trash",
+          "name": "سلة المحذوفات",
+          "slug": "app-messages-trash"
+        }
+      ]
+    },
+    {
+      "name": "الأمان",
+      "icon": "menu-icon tf-icons ri-shield-line",
+      "slug": "app-security",
+      "permission": "manage security",
+      "submenu": [
+        {
+          "url": "dashboard/security/logs",
+          "name": "سجلات الأمان",
+          "slug": "app-security-logs"
+        },
+        {
+          "url": "dashboard/security/trusted-ips",
+          "name": "العناوين الموثوقة",
+          "slug": "app-security-trusted-ips"
+        },
+        {
+          "url": "dashboard/security/blocked-ips",
+          "name": "العناوين المحظورة",
+          "slug": "app-security-blocked-ips"
+        }
+      ]
+    },
+    {
+      "name": "إدارة الموقع",
+      "icon": "menu-icon tf-icons ri-settings-line",
+      "slug": "app-site",
+      "submenu": [
+        {
+          "url": "dashboard/sitemap",
+          "name": "خريطة الموقع",
+          "slug": "app-site-sitemap",
+          "permission": "manage sitemap"
+        },
+        {
+          "url": "dashboard/calendar",
+          "name": "التقويم",
+          "slug": "app-site-calendar",
+          "permission": "manage calendar"
+        },
+        {
+          "url": "dashboard/monitoring",
+          "name": "المراقبة",
+          "slug": "app-site-monitoring",
+          "permission": "manage monitoring"
+        }
+      ]
+    },
+    {
+      "name": "المراقبة والتحليلات",
+      "icon": "menu-icon tf-icons ri-line-chart-line",
+      "slug": "app-monitoring",
+      "permission": "manage monitoring",
+      "submenu": [
+        {
+          "url": "dashboard/monitoring",
+          "name": "لوحة المراقبة",
+          "icon": "menu-icon tf-icons ri-dashboard-3-line",
+          "slug": "app-monitoring-dashboard"
+        },
+        {
+          "url": "dashboard/monitoring/stats",
+          "name": "الإحصائيات",
+          "icon": "menu-icon tf-icons ri-bar-chart-2-line",
+          "slug": "app-monitoring-stats"
+        }
+      ]
+    },
+    {
+      "name": "اختبارات النظام",
+      "icon": "menu-icon tf-icons ri-test-tube-line",
+      "slug": "system-tests",
+      "permission": "manage test",
+      "submenu": [
+        {
+          "url": "dashboard/smtp/test-page",
+          "name": "اختبار SMTP",
+          "icon": "menu-icon tf-icons ri-mail-send-line",
+          "slug": "test-smtp"
+        },
+        {
+          "url": "dashboard/test-redis",
+          "name": "اختبار Redis",
+          "icon": "menu-icon tf-icons ri-database-2-line",
+          "permission": "manage redis",
+          "slug": "test-redis"
+        },
+        {
+          "url": "dashboard/clear-cache",
+          "name": "مسح كاش Redis",
+          "icon": "menu-icon tf-icons ri-database-2-line",
+          "permission": "manage redis",
+          "slug": "clear-cache"
+        }
+      ]
+    }
+  ]
+}
