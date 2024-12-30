@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class CommentController extends Controller
 {
@@ -18,27 +17,21 @@ class CommentController extends Controller
         ]);
 
         try {
-            // الحصول على قاعدة البيانات الحالية
-            $database = session('database', 'jo');
+            // تحديد قاعدة البيانات من الطلب
+            $country = $request->input('country', 'jordan');
+            $connectionName = match ($country) {
+                'jordan' => 'jo',
+                'saudi' => 'sa',
+                'palestine' => 'ps',
+                default => 'jo'
+            };
 
-            // التحقق من وجود المحتوى في نفس قاعدة البيانات
-            $contentExists = DB::connection($database)
-                ->table(strtolower(class_basename($validated['commentable_type'])) . 's')
-                ->where('id', $validated['commentable_id'])
-                ->exists();
-
-            if (!$contentExists) {
-                return response()->json([
-                    'message' => 'المحتوى غير موجود في قاعدة البيانات الحالية.',
-                ], 404);
-            }
-
-            $comment = Comment::create([
+            // استخدام الاتصال المحدد
+            $comment = Comment::on($connectionName)->create([
                 'body' => $validated['body'],
-                'user_id' => auth()->id(),
+                'user_id' => auth()->id(), // المستخدم من قاعدة البيانات الرئيسية
                 'commentable_id' => $validated['commentable_id'],
                 'commentable_type' => $validated['commentable_type'],
-                'database' => $database // حفظ اسم قاعدة البيانات مع التعليق
             ]);
 
             return response()->json([
@@ -53,26 +46,31 @@ class CommentController extends Controller
         }
     }
 
-    public function index(Request $request, $type, $id)
+    public function index(Request $request, $database, $id)
     {
         try {
-            $database = session('database', 'jo');
+            // تحديد نوع المحتوى من المسار
+            $routeName = $request->route()->getName();
+            $modelType = str_contains($routeName, 'news') ? 'App\\Models\\News' : 'App\\Models\\Article';
             
-            // جلب التعليقات المرتبطة بالمحتوى في قاعدة البيانات الحالية فقط
+            // جلب التعليقات المرتبطة بالمحتوى
             $comments = Comment::where([
-                'commentable_type' => $type,
+                'commentable_type' => $modelType,
                 'commentable_id' => $id,
-                'database' => $database
             ])->with('user')->latest()->get();
 
+            // إرجاع التعليقات (حتى لو كانت فارغة)
             return response()->json([
-                'comments' => $comments
+                'comments' => $comments,
+                'total' => $comments->count()
             ]);
         } catch (\Exception $e) {
+            // في حالة حدوث خطأ، نرجع مصفوفة فارغة
             return response()->json([
-                'message' => 'فشل في جلب التعليقات.',
-                'error' => $e->getMessage()
-            ], 500);
+                'comments' => [],
+                'total' => 0,
+                'message' => 'لا توجد تعليقات.'
+            ]);
         }
     }
 }

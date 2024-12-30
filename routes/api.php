@@ -178,10 +178,6 @@ Route::middleware(['auth:sanctum', 'api'])->group(function () {
             Route::get('/performance', [PerformanceController::class, 'index'])->name('api.admin.performance.index');
         });
 
-        // Comments & Reactions
-        Route::post('/comments', [CommentController::class, 'store'])->name('api.comments.store');
-        Route::post('/reactions', [ReactionController::class, 'store'])->name('api.reactions.store');
-
         // Filters
         Route::prefix('filter')->group(function () {
             Route::get('/files', [FilterController::class, 'index'])->name('api.filter.files');
@@ -191,6 +187,17 @@ Route::middleware(['auth:sanctum', 'api'])->group(function () {
         });
 
     });
+});
+
+ // Comments Routes with throttle middleware
+Route::middleware(['api', 'throttle:60,1'])->prefix('{database}')->group(function () {
+    // مسارات التعليقات للأخبار
+    Route::get('/news/{id}/comments', [App\Http\Controllers\Api\CommentController::class, 'index'])->name('api.comments.news.index');
+    Route::post('/news/{id}/comments', [App\Http\Controllers\Api\CommentController::class, 'store'])->middleware('auth:sanctum')->name('api.comments.news.store');
+    
+    // مسارات التعليقات للمقالات
+    Route::get('/lesson/articles/{id}/comments', [App\Http\Controllers\Api\CommentController::class, 'index'])->name('api.comments.articles.index');
+    Route::post('/lesson/articles/{id}/comments', [App\Http\Controllers\Api\CommentController::class, 'store'])->middleware('auth:sanctum')->name('api.comments.articles.store');
 });
 
 // Public Content Routes

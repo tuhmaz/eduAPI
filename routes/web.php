@@ -124,10 +124,10 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'),'verified'])
     Route::resource('files', FileController::class);
 
     // === News Routes ===
-    Route::resource('news', NewsController::class)->middleware('can:manage categories');
+    Route::resource('news', NewsController::class)->middleware('can:manage news');
 
     // === Categories ===
-    Route::resource('categories', CategoryController::class)->middleware('can:manage news');
+    Route::resource('categories', CategoryController::class)->middleware('can:manage categories');
     
     // Settings routes
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index')->middleware('can:manage settings');

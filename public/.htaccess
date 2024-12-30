@@ -18,7 +18,7 @@
     </FilesMatch>
 
     # منع الوصول إلى المجلدات الحساسة
-    RedirectMatch 403 ^/(.git|.env|.config|vendor|node_modules|storage|bootstrap/cache)/.*$
+    RedirectMatch 403 ^/(.git|.env|.config|vendor|node_modules|bootstrap/cache)/.*$
 
     # منع عرض محتويات المجلدات
     Options -Indexes
