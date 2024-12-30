@@ -27,7 +27,11 @@ class RouteServiceProvider extends ServiceProvider
                 ->group(base_path('routes/web.php'));
         });
 
-        // Register the CheckApiAccess middleware
+        // Register middlewares
         Route::aliasMiddleware('check.api', \App\Http\Middleware\CheckApiAccess::class);
+        Route::aliasMiddleware('track.visitor', \App\Http\Middleware\TrackVisitor::class);
+
+        // Apply TrackVisitor middleware to all web routes
+        Route::pushMiddlewareToGroup('web', \App\Http\Middleware\TrackVisitor::class);
     }
 }

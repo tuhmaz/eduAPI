@@ -1,3 +1,12 @@
+@php
+$pageConfigs = [
+    'myLayout' => 'vertical',
+    'contentLayout' => 'compact',
+    'menuCollapsed' => false,
+    'hasCustomizer' => false
+];
+@endphp
+
 @extends('layouts.layoutMaster')
 
 @section('title', 'لوحة المراقبة')
@@ -10,10 +19,38 @@
         }
         .card {
             margin-bottom: 1.5rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
         }
         .loading-indicator {
             text-align: center;
             padding: 1rem;
+        }
+        .stat-card {
+            border-radius: 0.5rem;
+            border: none;
+        }
+        .stat-card .card-body {
+            padding: 1.5rem;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #5e72e4;
+        }
+        .stat-label {
+            color: #8898aa;
+            font-size: 0.875rem;
+            margin-bottom: 0;
+        }
+        .chart-container {
+            height: 350px;
+            margin-top: 1rem;
         }
     </style>
 @endsection
@@ -29,91 +66,107 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">لوحة المراقبة</h5>
-                <div>
+                <div class="d-flex align-items-center">
                     <span id="last-update" class="text-muted ms-3"></span>
-                    <button id="clear-cache-btn" class="btn btn-primary btn-sm">
+                    <button id="refresh-stats" class="btn btn-primary btn-sm ms-2">
                         <i class="bx bx-refresh me-1"></i>
-                        تنظيف الكاش
+                        تحديث
                     </button>
-                    <div id="loading-indicator" style="display: none;">
-                        <i class="bx bx-loader bx-spin"></i>
-                    </div>
                 </div>
             </div>
             <div class="card-body">
+                <!-- Visitor Stats -->
+                <div class="row g-4 mb-4">
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <h6 class="stat-label">المستخدمين المتصلين</h6>
+                                <div class="stat-value" id="online-users">0</div>
+                                <div class="progress progress-sm mt-3">
+                                    <div class="progress-bar bg-primary" role="progressbar" style="width: 0%" id="online-users-progress"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <h6 class="stat-label">الزوار المتصلين</h6>
+                                <div class="stat-value" id="online-visitors">0</div>
+                                <div class="progress progress-sm mt-3">
+                                    <div class="progress-bar bg-info" role="progressbar" style="width: 0%" id="online-visitors-progress"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <h6 class="stat-label">اتصالات قاعدة البيانات</h6>
+                                <div class="stat-value" id="db-connections">0</div>
+                                <div class="progress progress-sm mt-3">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: 0%" id="db-connections-progress"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <h6 class="stat-label">متوسط وقت الاستعلام</h6>
+                                <div class="stat-value" id="query-time">0 ms</div>
+                                <div class="progress progress-sm mt-3">
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: 0%" id="query-time-progress"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
                 <div class="row g-4">
-                    <!-- إحصائيات الزوار -->
-                    <div class="col-md-3">
+                    <div class="col-12 col-lg-6">
                         <div class="card">
                             <div class="card-body">
-                                <h5>المستخدمين النشطين</h5>
-                                <h2 id="online-users-count">0</h2>
+                                <h6 class="card-title mb-4">توزيع الصفحات</h6>
+                                <div id="pageDistributionChart" class="chart-container"></div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-12 col-lg-6">
                         <div class="card">
                             <div class="card-body">
-                                <h5>الزوار</h5>
-                                <h2 id="online-guests-count">0</h2>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5>إجمالي المتصلين</h5>
-                                <h2 id="total-online-count">0</h2>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5>مشاهدات الصفحة</h5>
-                                <h2 id="page-views-count">0</h2>
+                                <h6 class="card-title mb-4">توزيع الدول</h6>
+                                <div id="countryDistributionChart" class="chart-container"></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
+                <!-- Database Stats -->
                 <div class="row g-4 mt-4">
-                    <!-- مخطط CPU -->
-                    <div class="col-md-6">
+                    <div class="col-12">
                         <div class="card">
                             <div class="card-body">
-                                <h5>استخدام CPU</h5>
-                                <div id="cpu-chart"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- مخطط الذاكرة -->
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5>استخدام الذاكرة</h5>
-                                <div id="memory-chart"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row g-4 mt-4">
-                    <!-- مخطط المتصفحات -->
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5>إحصائيات المتصفحات</h5>
-                                <div id="browsers-chart"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- مخطط المواقع -->
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5>مواقع الزوار</h5>
-                                <div id="locations-chart"></div>
+                                <h6 class="card-title mb-4">إحصائيات قاعدة البيانات</h6>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="stat-label">عمليات التحديد</div>
+                                        <div id="db-selects" class="h4">0</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="stat-label">عمليات التحديث</div>
+                                        <div id="db-updates" class="h4">0</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="stat-label">عمليات الإدراج</div>
+                                        <div id="db-inserts" class="h4">0</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="stat-label">عمليات الحذف</div>
+                                        <div id="db-deletes" class="h4">0</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -127,207 +180,126 @@
 @section('page-script')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // تكوين المخططات
-    const charts = {
-        cpuChart: new ApexCharts(document.querySelector("#cpu-chart"), {
-            series: [0],
-            chart: {
-                height: 200,
-                type: 'radialBar',
-                sparkline: {
-                    enabled: true
+    // Initialize charts
+    const pageDistChart = new ApexCharts(document.getElementById('pageDistributionChart'), {
+        chart: {
+            type: 'pie',
+            height: 350
+        },
+        series: [],
+        labels: [],
+        responsive: [{
+            breakpoint: 480,
+            options: {
+                chart: {
+                    height: 200
+                },
+                legend: {
+                    position: 'bottom'
                 }
-            },
-            plotOptions: {
-                radialBar: {
-                    startAngle: -90,
-                    endAngle: 90,
-                    track: {
-                        background: "#e7e7e7",
-                        strokeWidth: '97%',
-                        margin: 5
-                    },
-                    dataLabels: {
-                        name: {
-                            show: false
-                        },
-                        value: {
-                            offsetY: -2,
-                            fontSize: '22px',
-                            formatter: function(val) {
-                                return val + '%';
-                            }
-                        }
-                    }
-                }
-            },
-            colors: ['#00E396']
-        }),
-        memoryChart: new ApexCharts(document.querySelector("#memory-chart"), {
-            series: [0],
-            chart: {
-                height: 200,
-                type: 'radialBar',
-                sparkline: {
-                    enabled: true
-                }
-            },
-            plotOptions: {
-                radialBar: {
-                    startAngle: -90,
-                    endAngle: 90,
-                    track: {
-                        background: "#e7e7e7",
-                        strokeWidth: '97%',
-                        margin: 5
-                    },
-                    dataLabels: {
-                        name: {
-                            show: false
-                        },
-                        value: {
-                            offsetY: -2,
-                            fontSize: '22px',
-                            formatter: function(val) {
-                                return val + '%';
-                            }
-                        }
-                    }
-                }
-            },
-            colors: ['#008FFB']
-        }),
-        browsersChart: new ApexCharts(document.querySelector("#browsers-chart"), {
-            series: [],
-            chart: {
-                type: 'donut',
-                height: 300
-            },
-            labels: [],
-            colors: ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0']
-        }),
-        locationsChart: new ApexCharts(document.querySelector("#locations-chart"), {
-            series: [],
-            chart: {
-                type: 'donut',
-                height: 300
-            },
-            labels: [],
-            colors: ['#775DD0', '#FF4560', '#FEB019', '#00E396', '#008FFB']
-        })
-    };
+            }
+        }]
+    });
 
-    // تهيئة المخططات
-    Object.values(charts).forEach(chart => chart.render());
+    const countryDistChart = new ApexCharts(document.getElementById('countryDistributionChart'), {
+        chart: {
+            type: 'pie',
+            height: 350
+        },
+        series: [],
+        labels: [],
+        responsive: [{
+            breakpoint: 480,
+            options: {
+                chart: {
+                    height: 200
+                },
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }]
+    });
 
-    // تحديث البيانات
+    pageDistChart.render();
+    countryDistChart.render();
+
+    // Update stats function
     function updateStats() {
-        const loadingIndicator = document.getElementById('loading-indicator');
-        loadingIndicator.style.display = 'block';
-
-        fetch('{{ route("monitoring.stats") }}')
-            .then(response => {
-                if (!response.ok) throw new Error('فشل في جلب البيانات');
-                return response.json();
-            })
+        fetch('/monitoring/realtime-data')
+            .then(response => response.json())
             .then(data => {
-                // تحديث إحصائيات الزوار
-                document.getElementById('online-users-count').textContent = data.visitors.users || 0;
-                document.getElementById('online-guests-count').textContent = data.visitors.guests || 0;
-                document.getElementById('total-online-count').textContent = data.visitors.total || 0;
-                document.getElementById('page-views-count').textContent = data.visitors.pageViews || 0;
+                // Update visitor counts
+                document.getElementById('online-users').textContent = data.online_users;
+                document.getElementById('online-visitors').textContent = data.online_visitors;
+                document.getElementById('db-connections').textContent = data.db_metrics.active_connections;
+                document.getElementById('query-time').textContent = data.db_metrics.query_time_avg + ' ms';
 
-                // تحديث مخططات النظام
-                charts.cpuChart.updateSeries([data.system.cpu_usage || 0]);
-                charts.memoryChart.updateSeries([data.system.memory_usage || 0]);
+                // Update progress bars
+                const maxUsers = Math.max(data.online_users * 2, 1);
+                const maxVisitors = Math.max(data.online_visitors * 2, 1);
+                const maxConnections = Math.max(data.db_metrics.active_connections * 2, 1);
+                const maxQueryTime = Math.max(parseFloat(data.db_metrics.query_time_avg) * 2, 1);
 
-                // تحديث مخطط المتصفحات
-                if (data.visitors.browsers) {
-                    const browsers = Object.entries(data.visitors.browsers);
-                    charts.browsersChart.updateOptions({
-                        labels: browsers.map(([browser]) => browser),
-                        series: browsers.map(([, count]) => count)
+                document.getElementById('online-users-progress').style.width = (data.online_users / maxUsers * 100) + '%';
+                document.getElementById('online-visitors-progress').style.width = (data.online_visitors / maxVisitors * 100) + '%';
+                document.getElementById('db-connections-progress').style.width = (data.db_metrics.active_connections / maxConnections * 100) + '%';
+                document.getElementById('query-time-progress').style.width = (parseFloat(data.db_metrics.query_time_avg) / maxQueryTime * 100) + '%';
+
+                // Update database metrics
+                if (data.db_metrics.details) {
+                    document.getElementById('db-selects').textContent = data.db_metrics.details.selects;
+                    document.getElementById('db-updates').textContent = data.db_metrics.details.updates;
+                    document.getElementById('db-inserts').textContent = data.db_metrics.details.inserts;
+                    document.getElementById('db-deletes').textContent = data.db_metrics.details.deletes;
+                }
+
+                // Update charts
+                if (data.page_distribution) {
+                    const pageData = data.page_distribution;
+                    pageDistChart.updateOptions({
+                        series: pageData.map(item => item.count),
+                        labels: pageData.map(item => item.current_page)
                     });
                 }
 
-                // تحديث مخطط المواقع
-                if (data.locations) {
-                    const locations = Object.entries(data.locations);
-                    charts.locationsChart.updateOptions({
-                        labels: locations.map(([country]) => country),
-                        series: locations.map(([, count]) => count)
+                if (data.country_distribution) {
+                    const countryData = data.country_distribution;
+                    countryDistChart.updateOptions({
+                        series: countryData.map(item => item.count),
+                        labels: countryData.map(item => item.country || 'Unknown')
                     });
                 }
 
-                // تحديث وقت آخر تحديث
-                document.getElementById('last-update').textContent = 
-                    'آخر تحديث: ' + new Date(data.timestamp).toLocaleTimeString('ar-SA');
-
-                showSuccessMessage('تم تحديث البيانات بنجاح');
+                // Update last update time
+                const now = new Date();
+                document.getElementById('last-update').textContent = 'آخر تحديث: ' + 
+                    now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             })
             .catch(error => {
-                console.error('خطأ:', error);
-                showErrorMessage('حدث خطأ أثناء تحديث البيانات');
-            })
-            .finally(() => {
-                loadingIndicator.style.display = 'none';
+                console.error('Error fetching realtime data:', error);
             });
     }
 
-    // تنظيف الكاش
-    document.getElementById('clear-cache-btn').addEventListener('click', function() {
-        if (!confirm('هل أنت متأكد من رغبتك في مسح ذاكرة التخزين المؤقت؟')) return;
-
-        const loadingIndicator = document.getElementById('loading-indicator');
-        loadingIndicator.style.display = 'block';
-
-        fetch('{{ route("monitoring.clear-cache") }}', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showSuccessMessage('تم تنظيف ذاكرة التخزين المؤقت بنجاح');
-                updateStats(); // تحديث البيانات بعد تنظيف الكاش
-            } else {
-                throw new Error(data.message || 'فشل تنظيف ذاكرة التخزين المؤقت');
-            }
-        })
-        .catch(error => {
-            console.error('خطأ:', error);
-            showErrorMessage('حدث خطأ أثناء تنظيف ذاكرة التخزين المؤقت');
-        })
-        .finally(() => {
-            loadingIndicator.style.display = 'none';
-        });
-    });
-
-    // رسائل النجاح والخطأ
-    function showSuccessMessage(message) {
-        Swal.fire({
-            title: 'نجاح',
-            text: message,
-            icon: 'success',
-            timer: 2000,
-            showConfirmButton: false
-        });
-    }
-
-    function showErrorMessage(message) {
-        Swal.fire({
-            title: 'خطأ',
-            text: message,
-            icon: 'error'
-        });
-    }
-
-    // تحديث البيانات كل 5 دقائق
+    // Initial update
     updateStats();
-    setInterval(updateStats, 5 * 60 * 1000);
+
+    // Set up auto-refresh
+    setInterval(updateStats, 5000);
+
+    // Manual refresh button
+    document.getElementById('refresh-stats').addEventListener('click', function() {
+        this.disabled = true;
+        const icon = this.querySelector('i');
+        icon.classList.add('bx-spin');
+        
+        updateStats();
+        
+        setTimeout(() => {
+            this.disabled = false;
+            icon.classList.remove('bx-spin');
+        }, 1000);
+    });
 });
 </script>
 @endsection

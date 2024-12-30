@@ -7,11 +7,20 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
-use Jenssegers\Agent\Agent;
+use App\Services\UserAgentService;
 use Illuminate\Support\Facades\File;
+use App\Models\VisitorTracking;
+use App\Models\DatabaseMetrics;
 
 class MonitoringController extends Controller
 {
+    protected $userAgent;
+
+    public function __construct(UserAgentService $userAgent)
+    {
+        $this->userAgent = $userAgent;
+    }
+
     public function index()
     {
         return view('dashboard.monitoring');
@@ -62,9 +71,7 @@ class MonitoringController extends Controller
             $browsers = [];
             foreach (array_merge($activeUsers, $activeGuests) as $session) {
                 if (isset($session['user_agent'])) {
-                    $agent = new Agent();
-                    $agent->setUserAgent($session['user_agent']);
-                    $browser = $agent->browser();
+                    $browser = $this->userAgent->parse($session['user_agent'])->browser();
                     $browsers[$browser] = ($browsers[$browser] ?? 0) + 1;
                 }
             }
@@ -322,6 +329,121 @@ class MonitoringController extends Controller
                 'success' => false,
                 'message' => 'حدث خطأ أثناء تنظيف ذاكرة التخزين المؤقت'
             ], 500);
+        }
+    }
+
+    public function dashboard()
+    {
+        // Get online visitors count (active in last 5 minutes)
+        $onlineVisitors = VisitorTracking::where('last_activity', '>=', now()->subMinutes(5))->count();
+        
+        // Get online registered users
+        $onlineUsers = VisitorTracking::where('last_activity', '>=', now()->subMinutes(5))
+            ->whereNotNull('user_id')
+            ->count();
+            
+        // Get page distribution from page_visits
+        $pageDistribution = DB::table('page_visits')
+            ->join('visitors_tracking', 'page_visits.visitor_id', '=', 'visitors_tracking.id')
+            ->where('visitors_tracking.last_activity', '>=', now()->subMinutes(5))
+            ->select('page_visits.page_url as current_page', DB::raw('count(*) as count'))
+            ->groupBy('page_visits.page_url')
+            ->get();
+            
+        // Get country distribution
+        $countryDistribution = VisitorTracking::where('last_activity', '>=', now()->subMinutes(5))
+            ->whereNotNull('country')
+            ->select('country', DB::raw('count(*) as count'))
+            ->groupBy('country')
+            ->get();
+            
+        // Get database metrics
+        $dbMetrics = $this->getDatabaseMetrics();
+        
+        return view('monitoring.dashboard', compact(
+            'onlineVisitors',
+            'onlineUsers',
+            'pageDistribution',
+            'countryDistribution',
+            'dbMetrics'
+        ));
+    }
+    
+    private function getDatabaseMetrics()
+    {
+        try {
+            // Get active connections
+            $activeConnections = DB::select("SHOW STATUS LIKE 'Threads_connected'")[0]->Value ?? 0;
+            
+            // Get query execution time metrics
+            $queryTime = DB::select("SHOW STATUS LIKE 'Com_select'")[0]->Value ?? 0;
+            $updateTime = DB::select("SHOW STATUS LIKE 'Com_update'")[0]->Value ?? 0;
+            $insertTime = DB::select("SHOW STATUS LIKE 'Com_insert'")[0]->Value ?? 0;
+            $deleteTime = DB::select("SHOW STATUS LIKE 'Com_delete'")[0]->Value ?? 0;
+            
+            // Total queries executed
+            $totalQueries = $queryTime + $updateTime + $insertTime + $deleteTime;
+            
+            // Get query execution time
+            $queryTimeSum = DB::select("SHOW STATUS LIKE 'Handler_read_rnd_next'")[0]->Value ?? 0;
+            
+            // Calculate average query time (in milliseconds)
+            $queryTimeAvg = $totalQueries > 0 ? number_format(($queryTimeSum / $totalQueries) * 1000, 2) : 0;
+            
+            return [
+                'active_connections' => $activeConnections,
+                'total_queries' => $totalQueries,
+                'query_time_avg' => $queryTimeAvg,
+                'details' => [
+                    'selects' => $queryTime,
+                    'updates' => $updateTime,
+                    'inserts' => $insertTime,
+                    'deletes' => $deleteTime
+                ]
+            ];
+        } catch (\Exception $e) {
+            \Log::error('Error getting database metrics: ' . $e->getMessage());
+            return [
+                'active_connections' => 0,
+                'total_queries' => 0,
+                'query_time_avg' => 0,
+                'details' => [
+                    'selects' => 0,
+                    'updates' => 0,
+                    'inserts' => 0,
+                    'deletes' => 0
+                ]
+            ];
+        }
+    }
+    
+    public function getRealtimeData()
+    {
+        try {
+            return response()->json([
+                'online_visitors' => VisitorTracking::where('last_activity', '>=', now()->subMinutes(5))->count(),
+                'online_users' => VisitorTracking::where('last_activity', '>=', now()->subMinutes(5))
+                    ->whereNotNull('user_id')
+                    ->count(),
+                'db_metrics' => $this->getDatabaseMetrics()
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error getting realtime data: ' . $e->getMessage());
+            return response()->json([
+                'online_visitors' => 0,
+                'online_users' => 0,
+                'db_metrics' => [
+                    'active_connections' => 0,
+                    'total_queries' => 0,
+                    'query_time_avg' => 0,
+                    'details' => [
+                        'selects' => 0,
+                        'updates' => 0,
+                        'inserts' => 0,
+                        'deletes' => 0
+                    ]
+                ]
+            ]);
         }
     }
 }

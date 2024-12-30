@@ -30,4 +30,22 @@ class CommentController extends Controller
 
     return redirect()->back()->with('success', 'تم إضافة التعليق بنجاح!');
   }
+
+  public function destroy($id)
+  {
+    try {
+      $comment = Comment::findOrFail($id);
+
+      // التحقق من أن المستخدم هو صاحب التعليق أو لديه صلاحية الحذف
+      if (auth()->id() !== $comment->user_id && !auth()->user()->can('delete comments')) {
+        return redirect()->back()->with('error', 'غير مصرح لك بحذف هذا التعليق');
+      }
+
+      $comment->delete();
+      return redirect()->back()->with('success', 'تم حذف التعليق بنجاح');
+
+    } catch (\Exception $e) {
+      return redirect()->back()->with('error', 'فشل في حذف التعليق');
+    }
+  }
 }

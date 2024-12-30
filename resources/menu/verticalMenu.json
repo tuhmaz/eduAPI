@@ -269,7 +269,24 @@
           "name": "المراقبة",
           "slug": "app-site-monitoring",
           "permission": "manage monitoring"
-        }
+        },
+        {
+          "url": "dashboard/settings",
+          "name": "الإعدادات العامة",
+          "slug": "app-settings-general"
+        },
+        {
+          "url": "dashboard/monitoring/dashboard",
+          "name": "لوحة المراقبة",
+          "icon": "menu-icon tf-icons ri-dashboard-3-line",
+          "slug": "app-monitoring-dashboard"
+        },
+        {
+          "url": "dashboard/monitoring/stats",
+          "name": "الإحصائيات",
+          "icon": "menu-icon tf-icons ri-bar-chart-2-line",
+          "slug": "app-monitoring-stats"
+        } 
       ]
     },
     {

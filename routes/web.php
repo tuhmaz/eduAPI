@@ -126,6 +126,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'),'verified'])
     // === News Routes ===
     Route::resource('news', NewsController::class)->middleware('can:manage news');
 
+    // Comments Routes
+    Route::delete('comments/{id}', [CommentController::class, 'destroy'])->name('comments.destroy')->middleware('auth');
+
     // === Categories ===
     Route::resource('categories', CategoryController::class)->middleware('can:manage categories');
     
@@ -239,6 +242,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'),'verified'])
         Route::resource('blocked-ips', BlockedIpsController::class)->only(['index', 'destroy']);
         Route::post('blocked-ips/bulk-destroy', [BlockedIpsController::class, 'bulkDestroy'])->name('blocked-ips.bulk-destroy');
     });
+
+    // === Monitoring Routes ===
+     
+        Route::get('/monitoring/dashboard', [MonitoringController::class, 'dashboard'])->name('monitoring.dashboard');
+        Route::get('/monitoring/realtime-data', [MonitoringController::class, 'getRealtimeData'])->name('monitoring.realtime-data');
+     
 
    
 });

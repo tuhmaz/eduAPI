@@ -193,11 +193,21 @@ Route::middleware(['auth:sanctum', 'api'])->group(function () {
 Route::middleware(['api', 'throttle:60,1'])->prefix('{database}')->group(function () {
     // مسارات التعليقات للأخبار
     Route::get('/news/{id}/comments', [App\Http\Controllers\Api\CommentController::class, 'index'])->name('api.comments.news.index');
+    Route::get('/news/{id}/comments/{comment}', [App\Http\Controllers\Api\CommentController::class, 'show'])->name('api.comments.news.show');
     Route::post('/news/{id}/comments', [App\Http\Controllers\Api\CommentController::class, 'store'])->middleware('auth:sanctum')->name('api.comments.news.store');
+    Route::delete('/news/{id}/comments/{comment}', [App\Http\Controllers\Api\CommentController::class, 'destroy'])->middleware('auth:sanctum')->name('api.comments.news.destroy');
     
     // مسارات التعليقات للمقالات
     Route::get('/lesson/articles/{id}/comments', [App\Http\Controllers\Api\CommentController::class, 'index'])->name('api.comments.articles.index');
+    Route::get('/lesson/articles/{id}/comments/{comment}', [App\Http\Controllers\Api\CommentController::class, 'show'])->name('api.comments.articles.show');
     Route::post('/lesson/articles/{id}/comments', [App\Http\Controllers\Api\CommentController::class, 'store'])->middleware('auth:sanctum')->name('api.comments.articles.store');
+    Route::delete('/lesson/articles/{id}/comments/{comment}', [App\Http\Controllers\Api\CommentController::class, 'destroy'])->middleware('auth:sanctum')->name('api.comments.articles.destroy');
+
+    // مسارات التفاعلات للتعليقات
+    Route::get('/comments/{comment}/reactions', [App\Http\Controllers\Api\ReactionController::class, 'index'])->name('api.reactions.index');
+    Route::post('/comments/{comment}/reactions', [App\Http\Controllers\Api\ReactionController::class, 'store'])->middleware('auth:sanctum')->name('api.reactions.store');
+    Route::get('/comments/{comment}/reactions/{reaction}', [App\Http\Controllers\Api\ReactionController::class, 'show'])->name('api.reactions.show');
+    Route::delete('/comments/{comment}/reactions/{reaction}', [App\Http\Controllers\Api\ReactionController::class, 'destroy'])->middleware('auth:sanctum')->name('api.reactions.destroy');
 });
 
 // Public Content Routes
