@@ -1,0 +1,1 @@
+$(document).ready(function(){var a=new Tagify(document.querySelector("#TagifyBasic"));$("#articleForm").on("submit",function(t){t.preventDefault();var e=a.value.map(function(n){return n.value}),i=e.join(",");$("#TagifyBasic").val(i),this.submit()})});

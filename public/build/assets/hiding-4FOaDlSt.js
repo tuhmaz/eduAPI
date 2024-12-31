@@ -1,0 +1,1 @@
+document.addEventListener("DOMContentLoaded",function(){var t=document.documentElement;t.removeAttribute("data-theme"),t.removeAttribute("data-assets-path"),t.removeAttribute("data-base-url"),t.removeAttribute("data-framework"),t.removeAttribute("data-template"),t.removeAttribute("data-style")});

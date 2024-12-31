@@ -264,23 +264,19 @@
           "slug": "app-site-calendar",
           "permission": "manage calendar"
         },
-        {
-          "url": "dashboard/monitoring",
-          "name": "المراقبة",
-          "slug": "app-site-monitoring",
-          "permission": "manage monitoring"
-        },
+        
         {
           "url": "dashboard/settings",
           "name": "الإعدادات العامة",
           "slug": "app-settings-general"
         },
         {
-          "url": "dashboard/monitoring/dashboard",
-          "name": "لوحة المراقبة",
-          "icon": "menu-icon tf-icons ri-dashboard-3-line",
-          "slug": "app-monitoring-dashboard"
+          "url": "dashboard/monitorboard",
+          "name": "المراقبة",
+          "slug": "app-site-monitoring",
+          "permission": "manage monitoring"
         },
+        
         {
           "url": "dashboard/monitoring/stats",
           "name": "الإحصائيات",

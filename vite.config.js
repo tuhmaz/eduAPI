@@ -1,9 +1,6 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
-import html from '@rollup/plugin-html';
 import { glob } from 'glob';
-import terser from '@rollup/plugin-terser';
-import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
 import viteCompression from 'vite-plugin-compression';
 
@@ -25,77 +22,60 @@ const fileQueries = {
   libsScssFiles: 'resources/assets/vendor/libs/**/!(_)*.scss',
   libsCssFiles: 'resources/assets/vendor/libs/**/*.css',
   fontsScssFiles: 'resources/assets/vendor/fonts/!(_)*.scss',
-  customJsFiles: 'resources/js/*.js'
+  customJsFiles: 'resources/js/*.js',
+  customCssFiles: 'resources/css/*.css',
+  assetsCssFiles: 'resources/assets/css/*.css'  // Added assets CSS files
 };
 
 // Collect all files
-const files = Object.entries(fileQueries).reduce((acc, [key, query]) => {
-  acc[key] = GetFilesArray(query);
-  return acc;
-}, {});
-
 function collectInputFiles() {
+  const inputFiles = [];
+  for (const key in fileQueries) {
+    const files = GetFilesArray(fileQueries[key]);
+    inputFiles.push(...files);
+  }
   return [
-    'resources/assets/css/edu.css',
+    'resources/assets/css/edu.css',  // Explicitly include edu.css
+    'resources/css/app.css',
+    'resources/css/monitoring.css',
+    'resources/css/security-logs.css',
     'resources/js/app.js',
-    ...Object.values(files).flat(), // Flatten all arrays into one
+    'resources/js/monitoring.js',
+    'resources/assets/js/security-logs.js',
+    ...inputFiles
   ];
-}
-
-// Processing Window Assignment for Libs like jKanban, pdfMake
-function libsWindowAssignment() {
-  return {
-    name: 'libsWindowAssignment',
-    transform(src, id) {
-      const replacements = {
-        'jkanban.js': ['this.jKanban', 'window.jKanban'],
-        'vfs_fonts': ['this.pdfMake', 'window.pdfMake'],
-      };
-
-      for (const [file, [search, replace]] of Object.entries(replacements)) {
-        if (id.includes(file)) {
-          return {
-            code: src.replace(search, replace),
-            map: null
-          };
-        }
-      }
-    }
-  };
 }
 
 export default defineConfig({
   plugins: [
     laravel({
-      input: collectInputFiles(),
-      refresh: true,
+      input: [
+        ...collectInputFiles(),
+        'node_modules/select2/dist/js/select2.min.js',
+        'node_modules/flatpickr/dist/flatpickr.min.js',
+        'node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.js',
+        'node_modules/select2/dist/css/select2.min.css',
+        'node_modules/flatpickr/dist/flatpickr.min.css',
+        'node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css'
+      ],
+      refresh: true
     }),
-    libsWindowAssignment(),
-    terser(),
-    visualizer(),
     viteCompression()
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'resources'),
-      '~': path.resolve(__dirname, 'resources/assets'),
-      'typeahead.js/dist/typeahead.bundle': path.resolve(__dirname, 'node_modules/typeahead.js/dist/typeahead.bundle.min.js')
+      '~': path.resolve(__dirname, 'node_modules'),
+      '@': path.resolve(__dirname, 'resources')
     }
   },
   build: {
+    chunkSizeWarningLimit: 1600,
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['jquery', 'bootstrap', '@popperjs/core', 'apexcharts']
+          vendor: ['jquery', 'select2', 'flatpickr', 'datatables.net-bs5']
         }
       }
-    },
-    chunkSizeWarningLimit: 1000,
-    assetsInlineLimit: 0,
-    emptyOutDir: false,
-    minify: true,
-  },
-  optimizeDeps: {
-    include: ['jquery', 'bootstrap']
+    }
   }
 });

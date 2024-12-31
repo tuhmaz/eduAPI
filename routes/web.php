@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Str;
+use Illuminate\Support\Str;
 use App\Http\Controllers\{
     language\LanguageController,
     authentications\LoginBasic,
@@ -48,13 +48,7 @@ use App\Http\Controllers\{
 
 // === Authentication Routes ===
 Route::prefix('auth')->group(function () {
-    Route::post('/logout', function () {
-        auth()->logout();
-        session()->invalidate();
-        session()->regenerateToken();
-        return redirect('/');
-    })->name('auth.logout')->middleware('auth');
-
+    Route::post('/logout', [LogoutController::class, 'logout'])->name('auth.logout')->middleware('auth');
     Route::get('/google', [SocialAuthController::class, 'redirectToGoogle'])->name('auth.google');
     Route::get('/google/callback', [SocialAuthController::class, 'handleGoogleCallback']);
 });
@@ -73,7 +67,7 @@ Route::get('/terms-of-service', function () {
 Route::get('/privacy-policy', function () {
     $policy = File::get(resource_path('markdown/policy.md'));
     return view('policy', ['policy' => Str::markdown($policy)]);
-})->name('privacy-policy.show');
+})->name('policy.show');
 
 // === Upload Routes ===
 Route::prefix('upload')->group(function () {
@@ -86,10 +80,14 @@ Route::get('/email/verify', [VerifyEmailController::class, 'show'])->middleware(
 Route::get('/email/verify/{id}/{hash}', [VerifyEmailController::class, 'verify'])->name('verification.verify');
 Route::post('/email/verification-notification', [VerifyEmailController::class, 'send'])->middleware(['auth', 'throttle:6,1'])->name('verification.send');
 
-
 // === Dashboard Routes ===
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'),'verified'])->prefix('dashboard')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
+
+    // === Monitoring Routes ===
+    Route::get('/monitorboard', [MonitoringController::class, 'monitorboard'])->name('dashboard.monitoring.monitorboard');
+    Route::get('/monitoring/stats', [MonitoringController::class, 'getStats'])->name('dashboard.monitoring.stats');
+    Route::post('/monitoring/clear-cache', [MonitoringController::class, 'clearCache'])->name('dashboard.monitoring.clear-cache');
 
     // === Sitemap Routes ===
     Route::prefix('sitemap')->middleware('can:manage sitemap')->group(function () {
@@ -207,13 +205,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'),'verified'])
         Route::get('/', [PerformanceController::class, 'dashboard'])->name('performance.dashboard');
     });
 
-    // === Monitoring Routes ===
-    Route::middleware(['throttle:60,1'])->group(function () {
-        Route::get('/monitoring', [MonitoringController::class, 'index'])->name('web.monitoring.index');
-        Route::get('/monitoring/stats', [MonitoringController::class, 'getStats'])->name('web.monitoring.stats');
-        Route::post('/monitoring/clear-cache', [MonitoringController::class, 'clearCache'])->name('web.monitoring.clear-cache');
-    });
-
     // === Redis Routes ===
     Route::get('/test-redis', [TestRedisController::class, 'testRedis'])->middleware('can:manage redis');
     Route::get('/clear-cache', [TestRedisController::class, 'clearCache'])->middleware('can:manage redis');
@@ -243,15 +234,11 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'),'verified'])
         Route::post('blocked-ips/bulk-destroy', [BlockedIpsController::class, 'bulkDestroy'])->name('blocked-ips.bulk-destroy');
     });
 
-    // === Monitoring Routes ===
-     
-        Route::get('/monitoring/dashboard', [MonitoringController::class, 'dashboard'])->name('monitoring.dashboard');
-        Route::get('/monitoring/realtime-data', [MonitoringController::class, 'getRealtimeData'])->name('monitoring.realtime-data');
-     
+
+
 
    
 });
-
 
 // === Frontend Routes ===
 Route::prefix('{database}')->group(function () {

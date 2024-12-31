@@ -1,0 +1,12 @@
+document.addEventListener("DOMContentLoaded",function(){const r=document.getElementById("refresh-stats"),n=document.getElementById("error-logs");async function o(){try{const e=await fetch("/dashboard/monitoring/stats",{headers:{"X-CSRF-TOKEN":document.querySelector('meta[name="csrf-token"]').content,Accept:"application/json"}});if(!e.ok)throw new Error(`HTTP error! status: ${e.status}`);const t=await e.json();g(t)}catch(e){console.error("Error fetching stats:",e),y(e.message)}}function g(e){var t,s,d,c,m,u,p;if(document.getElementById("today-visitors").textContent=((t=e.visitors)==null?void 0:t.today)||0,document.getElementById("month-visitors").textContent=((s=e.visitors)==null?void 0:s.month)||0,document.getElementById("year-visitors").textContent=((d=e.visitors)==null?void 0:d.year)||0,document.getElementById("total-visitors").textContent=((c=e.visitors)==null?void 0:c.total)||0,document.getElementById("php-version").textContent=((m=e.system)==null?void 0:m.php_version)||"-",document.getElementById("web-server").textContent=((u=e.system)==null?void 0:u.web_server)||"-",document.getElementById("memory-usage").textContent=((p=e.system)==null?void 0:p.memory_usage)||"-",e.errors&&Array.isArray(e.errors)){n.innerHTML="";const i=document.createElement("ul");i.classList.add("list-group"),e.errors.forEach(a=>{const l=document.createElement("li");l.classList.add("list-group-item","error-log-item"),l.innerHTML=`
+                    <div class="error-message">${a.message}</div>
+                    <div class="error-details">
+                        <span class="error-file">${a.file}</span>
+                        <span class="error-line">Line: ${a.line}</span>
+                    </div>
+                `,i.appendChild(l)}),n.appendChild(i)}}function y(e){const t=n.querySelector("ul")||document.createElement("ul");t.classList.add("list-group");const s=document.createElement("li");s.classList.add("list-group-item","error-log-item","text-danger"),s.innerHTML=`
+            <div class="error-message">Error: ${e}</div>
+            <div class="error-details">
+                <span class="error-time">${new Date().toLocaleTimeString()}</span>
+            </div>
+        `,t.appendChild(s),n.contains(t)||n.appendChild(t)}o(),r.addEventListener("click",()=>{r.disabled=!0,r.innerHTML='<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> جاري التحديث...',o().finally(()=>{r.disabled=!1,r.textContent="تحديث"})}),setInterval(o,5*60*1e3)});

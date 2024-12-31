@@ -1,240 +1,359 @@
-$(function() {
-  const selectAllCheckbox = $('#select-all-logs');
-  const logCheckboxes = $('.log-checkbox');
-  const bulkDeleteBtn = $('#bulk-delete-btn');
-  const toggleSelectAllBtn = $('#toggle-select-all-btn');
+$(document).ready(function() {
+    // تهيئة Select2 أولاً
+    if (typeof $.fn.select2 !== 'undefined') {
+        $('.select2').select2();
+    }
 
-  let allSelected = false;
+    // المتغيرات الرئيسية
+    const selectAllCheckbox = $('#select-all-logs');
+    const logCheckboxes = $('.log-checkbox');
+    const bulkDeleteBtn = $('#bulk-delete-btn');
+    const toggleSelectAllBtn = $('#toggle-select-all-btn');
+    const bulkActionsBar = $('.bulk-actions');
+    const formFeedback = $('#form-feedback');
 
-  console.log("Loaded: selectAllCheckbox:", selectAllCheckbox.length);
-  console.log("Loaded: logCheckboxes:", logCheckboxes.length);
+    // تهيئة المكونات
+    initializeComponents();
+    initializeEventListeners();
+    initializeFilters();
+    initializeExport();
 
-  // تحديد الكل وإلغاء التحديد
-  toggleSelectAllBtn.on('click', function() {
-      allSelected = !allSelected;
-      console.log("Toggle Select All:", allSelected);
+    // تهيئة المكونات الأساسية
+    function initializeComponents() {
+        // تهيئة التواريخ
+        if ($.fn.datepicker) {
+            $('.datepicker').datepicker({
+                format: 'yyyy-mm-dd',
+                autoclose: true,
+                language: 'ar',
+                rtl: true
+            });
+        }
 
-      logCheckboxes.prop('checked', allSelected);
-      selectAllCheckbox.prop('checked', allSelected);
-      updateBulkDeleteButton();
-      updateToggleButtonText();
-  });
+        // تهيئة القوائم المنسدلة
+        if ($.fn.select2) {
+            $('.select2').select2({
+                dir: 'rtl',
+                placeholder: 'اختر...',
+                allowClear: true
+            });
+        }
 
-  selectAllCheckbox.on('change', function() {
-      console.log("Select All Checkbox Changed:", $(this).is(':checked'));
+        // تهيئة الجدول
+        if ($.fn.DataTable) {
+            $('.security-logs-table').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.10.24/i18n/Arabic.json'
+                },
+                order: [[1, 'desc']], // ترتيب حسب التاريخ تنازلياً
+                pageLength: 15
+            });
+        }
+    }
 
-      logCheckboxes.prop('checked', $(this).is(':checked'));
-      updateBulkDeleteButton();
-  });
+    // تهيئة مستمعي الأحداث
+    function initializeEventListeners() {
+        // تحديد الكل
+        toggleSelectAllBtn.on('click', function() {
+            const isChecked = selectAllCheckbox.prop('checked');
+            selectAllCheckbox.prop('checked', !isChecked);
+            logCheckboxes.prop('checked', !isChecked);
+            updateBulkActions(!isChecked);
+            updateToggleButtonText(!isChecked);
+        });
 
-  logCheckboxes.on('change', function() {
-      const allChecked = logCheckboxes.length === logCheckboxes.filter(':checked').length;
-      console.log("Individual Checkbox Changed, All Checked:", allChecked);
+        // تغيير حالة صندوق التحديد الرئيسي
+        selectAllCheckbox.on('change', function() {
+            const isChecked = $(this).prop('checked');
+            logCheckboxes.prop('checked', isChecked);
+            updateBulkActions(isChecked);
+        });
 
-      selectAllCheckbox.prop('checked', allChecked);
-      updateBulkDeleteButton();
-  });
+        // تغيير حالة صناديق التحديد الفردية
+        logCheckboxes.on('change', function() {
+            const checkedCount = logCheckboxes.filter(':checked').length;
+            const totalCount = logCheckboxes.length;
+            
+            selectAllCheckbox.prop('checked', checkedCount === totalCount);
+            updateBulkActions(checkedCount > 0);
+        });
 
-  function updateBulkDeleteButton() {
-      const anyChecked = logCheckboxes.filter(':checked').length > 0;
-      console.log("Bulk Delete Button Visibility:", anyChecked);
+        // حذف السجلات المحددة
+        bulkDeleteBtn.on('click', handleBulkDelete);
+    }
 
-      bulkDeleteBtn.toggleClass('d-none', !anyChecked);
-  }
+    // تحديث شريط الإجراءات الجماعية
+    function updateBulkActions(show) {
+        const checkedCount = logCheckboxes.filter(':checked').length;
+        bulkActionsBar.toggleClass('show', show);
+        
+        if (show) {
+            bulkActionsBar.find('.selected-count').text(checkedCount);
+        }
+        
+        bulkDeleteBtn.toggleClass('d-none', !show);
+    }
 
-  function updateToggleButtonText() {
-      toggleSelectAllBtn.html(allSelected ?
-          '<i class="ri-checkbox-multiple-blank-line me-1"></i> إلغاء تحديد الكل' :
-          '<i class="ri-checkbox-multiple-line me-1"></i> تحديد الكل'
-      );
-  }
+    // تحديث نص زر التحديد
+    function updateToggleButtonText(isAllSelected) {
+        toggleSelectAllBtn.html(
+            isAllSelected
+                ? '<i class="ri-checkbox-multiple-blank-line me-1"></i> إلغاء تحديد الكل'
+                : '<i class="ri-checkbox-multiple-line me-1"></i> تحديد الكل'
+        );
+    }
 
-  function updateBulkDeleteButton() {
-      const checkedBoxes = $('input[name="selected_logs[]"]:checked');
-      $('#bulk-delete-btn').toggleClass('d-none', checkedBoxes.length === 0);
-  }
+    // معالجة الحذف الجماعي
+    function handleBulkDelete() {
+        const selectedIds = getSelectedIds();
 
-  function updateToggleButtonText(isAllSelected) {
-      $('#toggle-select-all-btn').html(
-          isAllSelected
-              ? '<i class="ri-checkbox-multiple-blank-line me-1"></i> إلغاء تحديد الكل'
-              : '<i class="ri-checkbox-multiple-line me-1"></i> تحديد الكل'
-      );
-  }
+        if (selectedIds.length === 0) {
+            showFeedback('error', 'الرجاء تحديد السجلات التي تريد حذفها');
+            return;
+        }
 
-  $('#toggle-select-all-btn').on('click', function() {
-      const checkboxes = $('input[name="selected_logs[]"]');
-      const selectAllCheckbox = $('#select-all-logs');
-      const currentState = selectAllCheckbox.prop('checked');
-      
-      checkboxes.prop('checked', !currentState);
-      selectAllCheckbox.prop('checked', !currentState);
-      
-      updateBulkDeleteButton();
-      updateToggleButtonText(!currentState);
-  });
+        if (!confirm('هل أنت متأكد من حذف السجلات المحددة؟')) {
+            return;
+        }
 
-  $(document).on('change', 'input[name="selected_logs[]"]', function() {
-      updateBulkDeleteButton();
-  });
+        const loadingBtn = createLoadingButton(bulkDeleteBtn);
+        
+        $.ajax({
+            url: $('#bulk-destroy-form').attr('action'),
+            method: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                ids: selectedIds.join(',')
+            },
+            beforeSend: () => {
+                loadingBtn.start();
+                formFeedback.removeClass('d-none success error');
+            },
+            success: (response) => {
+                if (response.success) {
+                    showFeedback('success', response.message);
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showFeedback('error', response.message);
+                }
+            },
+            error: (xhr) => {
+                const message = xhr.responseJSON?.message || 'حدث خطأ أثناء حذف السجلات';
+                showFeedback('error', message);
+            },
+            complete: () => {
+                loadingBtn.stop();
+            }
+        });
+    }
 
-  $('#bulk-delete-btn').on('click', function() {
-      const selectedIds = [];
-      $('input[name="selected_logs[]"]:checked').each(function() {
-          selectedIds.push($(this).val());
-      });
+    // تهيئة الفلاتر
+    function initializeFilters() {
+        const filterForm = $('#filter-form');
+        
+        filterForm.on('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            $.ajax({
+                url: filterForm.attr('action'),
+                method: 'GET',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: (response) => {
+                    $('#logs-table-container').html(response);
+                    initializeComponents(); // إعادة تهيئة المكونات بعد تحديث الجدول
+                },
+                error: (xhr) => {
+                    showFeedback('error', 'حدث خطأ أثناء تصفية النتائج');
+                }
+            });
+        });
 
-      if (selectedIds.length === 0) {
-          alert('الرجاء تحديد السجلات التي تريد حذفها');
-          return;
-      }
+        // تحديث الفلاتر تلقائياً
+        filterForm.find('select, input').on('change', function() {
+            filterForm.submit();
+        });
+    }
 
-      if (!confirm('هل أنت متأكد من حذف السجلات المحددة؟')) {
-          return;
-      }
+    // تهيئة التصدير
+    function initializeExport() {
+        $('.export-excel').on('click', function(e) {
+            e.preventDefault();
+            
+            const filters = {
+                event_type: $('#event-type-filter').val(),
+                status: $('#status-filter').val(),
+                date_from: $('#date-from').val(),
+                date_to: $('#date-to').val()
+            };
+            
+            const queryParams = Object.entries(filters)
+                .filter(([_, value]) => value)
+                .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+                .join('&');
+            
+            const exportUrl = window.exportUrl + (queryParams ? `?${queryParams}` : '');
+            window.location.href = exportUrl;
+        });
+    }
 
-      const feedback = $('#form-feedback');
-      feedback.removeClass('d-none alert-danger alert-success');
+    // وظائف مساعدة
+    function getSelectedIds() {
+        return Array.from(logCheckboxes.filter(':checked')).map(cb => cb.value);
+    }
 
-      $('#bulk-destroy-ids').val(selectedIds.join(','));
-      
-      $.ajax({
-          url: $('#bulk-destroy-form').attr('action'),
-          method: 'POST',
-          data: {
-              _token: $('meta[name="csrf-token"]').attr('content'),
-              ids: selectedIds.join(',')
-          },
-          beforeSend: function() {
-              $('#bulk-delete-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> جاري الحذف...');
-          },
-          success: function(response) {
-              if (response.success) {
-                  feedback.addClass('alert alert-success').html(response.message).removeClass('d-none');
-                  // Refresh the page after successful deletion
-                  setTimeout(() => {
-                      window.location.reload();
-                  }, 1500);
-              } else {
-                  feedback.addClass('alert alert-danger').html(response.message).removeClass('d-none');
-              }
-          },
-          error: function(xhr) {
-              const message = xhr.responseJSON ? xhr.responseJSON.message : 'حدث خطأ أثناء حذف السجلات';
-              feedback.addClass('alert alert-danger').html(message).removeClass('d-none');
-          },
-          complete: function() {
-              $('#bulk-delete-btn').prop('disabled', false).html('<i class="fas fa-trash"></i> حذف المحدد');
-          }
-      });
-  });
+    function showFeedback(type, message) {
+        formFeedback
+            .removeClass('d-none success error')
+            .addClass(type)
+            .html(message)
+            .fadeIn();
+    }
 
-  function submitBulkDelete() {
-    const selectedIds = [];
-    document.querySelectorAll('input[name="selected_logs[]"]:checked').forEach(checkbox => {
-        selectedIds.push(checkbox.value);
+    function createLoadingButton(btn) {
+        const originalHtml = btn.html();
+        const loadingHtml = '<i class="fas fa-spinner fa-spin"></i> جاري الحذف...';
+        
+        return {
+            start: () => {
+                btn.prop('disabled', true).html(loadingHtml);
+            },
+            stop: () => {
+                btn.prop('disabled', false).html(originalHtml);
+            }
+        };
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // تهيئة Select2
+    $('.select2').select2();
+
+    // تهيئة Flatpickr
+    $('.flatpickr').flatpickr({
+        dateFormat: "Y-m-d",
+        locale: "ar"
     });
 
-    console.log('Selected IDs:', selectedIds);
-
-    if (selectedIds.length === 0) {
-        alert('الرجاء تحديد السجلات التي تريد حذفها');
-        return false;
-    }
-
-    if (!confirm('هل أنت متأكد من حذف السجلات المحددة؟')) {
-        return false;
-    }
-
-    const idsString = selectedIds.join(',');
-    console.log('IDs string to be sent:', idsString);
-    
-    document.getElementById('bulk-destroy-ids').value = idsString;
-    console.log('Form data before submit:', new FormData(document.getElementById('bulk-destroy-form')));
-    
-    document.getElementById('bulk-destroy-form').submit();
-    return true;
-  }
-
-  document.getElementById('toggle-select-all-btn').addEventListener('click', function() {
-    const checkboxes = document.querySelectorAll('input[name="selected_logs[]"]');
+    // متغيرات عامة
+    const bulkActionsBar = document.querySelector('.bulk-actions');
     const selectAllCheckbox = document.getElementById('select-all-logs');
-    const isChecked = selectAllCheckbox.checked;
-    
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = !isChecked;
-    });
-    selectAllCheckbox.checked = !isChecked;
-    
-    // Show/hide bulk delete button
-    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
-    const hasChecked = Array.from(checkboxes).some(cb => cb.checked);
-    bulkDeleteBtn.classList.toggle('d-none', !hasChecked);
-  });
+    const logCheckboxes = document.querySelectorAll('.log-checkbox');
+    const selectedCountSpan = document.querySelector('.selected-count');
+    const bulkDestroyForm = document.getElementById('bulk-destroy-form');
+    const bulkDestroyIds = document.getElementById('bulk-destroy-ids');
+    const formFeedback = document.getElementById('form-feedback');
 
-  document.addEventListener('change', function(e) {
-    if (e.target.matches('input[name="selected_logs[]"]')) {
-        const checkboxes = document.querySelectorAll('input[name="selected_logs[]"]');
-        const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
-        const hasChecked = Array.from(checkboxes).some(cb => cb.checked);
-        bulkDeleteBtn.classList.toggle('d-none', !hasChecked);
+    // تحديث شريط الإجراءات الجماعية
+    function updateBulkActionsBar() {
+        const selectedCount = document.querySelectorAll('.log-checkbox:checked').length;
+        selectedCountSpan.textContent = selectedCount;
+        
+        if (selectedCount > 0) {
+            bulkActionsBar.classList.remove('d-none');
+        } else {
+            bulkActionsBar.classList.add('d-none');
+            selectAllCheckbox.checked = false;
+        }
     }
-  });
 
-  window.submitBulkDelete = submitBulkDelete;
+    // تحديد/إلغاء تحديد كل السجلات
+    selectAllCheckbox?.addEventListener('change', function() {
+        logCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateBulkActionsBar();
+    });
 
-  // Handle Excel export with filters
-  $('.export-excel').on('click', function(e) {
-      e.preventDefault();
-      
-      // Get current filter values
-      const filters = {
-          event_type: $('#event-type-filter').val(),
-          status: $('#status-filter').val(),
-          date_from: $('#date-from').val(),
-          date_to: $('#date-to').val()
-      };
-      
-      // Build query string only if filters have values
-      const queryParams = [];
-      Object.entries(filters).forEach(([key, value]) => {
-          if (value) {
-              queryParams.push(`${key}=${encodeURIComponent(value)}`);
-          }
-      });
-      
-      // Add query string only if there are filters
-      const finalUrl = queryParams.length > 0 
-          ? `${window.exportUrl}?${queryParams.join('&')}` 
-          : window.exportUrl;
-      
-      // Redirect to export URL
-      window.location.href = finalUrl;
-  });
+    // تحديث حالة "تحديد الكل" عند تغيير أي صندوق اختيار
+    logCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateBulkActionsBar();
+            
+            const allChecked = document.querySelectorAll('.log-checkbox:not(:checked)').length === 0;
+            selectAllCheckbox.checked = allChecked;
+        });
+    });
 
-  // تحديث حالة السجل
-  $('.resolve-form').on('submit', function(e) {
-      e.preventDefault();
-      const form = $(this);
-      
-      $.ajax({
-          url: form.attr('action'),
-          method: 'POST',
-          data: form.serialize(),
-          success: function(response) {
-              // تحديث واجهة المستخدم
-              const statusCell = form.closest('td');
-              statusCell.html('<span class="badge bg-label-success">تم الحل</span>');
-              
-              // إظهار رسالة نجاح
-              if (response.message) {
-                  // يمكنك إضافة كود لعرض رسالة النجاح هنا
-              }
-          },
-          error: function(xhr) {
-              console.error('Error:', xhr);
-              alert('حدث خطأ أثناء تحديث حالة السجل');
-          }
-      });
-  });
+    // حذف السجلات المحددة
+    document.getElementById('bulk-delete-btn')?.addEventListener('click', function() {
+        if (confirm('هل أنت متأكد من حذف السجلات المحددة؟')) {
+            const selectedIds = Array.from(document.querySelectorAll('.log-checkbox:checked'))
+                                   .map(checkbox => checkbox.value);
+            
+            bulkDestroyIds.value = JSON.stringify(selectedIds);
+            bulkDestroyForm.submit();
+        }
+    });
+
+    // تبديل حالة الحل
+    document.querySelectorAll('.toggle-resolution-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const logId = this.dataset.logId;
+            
+            try {
+                const response = await fetch(`/dashboard/security/logs/${logId}/toggle-resolution`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showFeedback('success', data.message);
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showFeedback('error', data.message || 'حدث خطأ أثناء تحديث الحالة');
+                }
+            } catch (error) {
+                showFeedback('error', 'حدث خطأ أثناء الاتصال بالخادم');
+            }
+        });
+    });
+
+    // حذف سجل واحد
+    document.querySelectorAll('.delete-log-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            if (!confirm('هل أنت متأكد من حذف هذا السجل؟')) return;
+
+            const logId = this.dataset.logId;
+            
+            try {
+                const response = await fetch(`/dashboard/security/logs/${logId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showFeedback('success', data.message);
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showFeedback('error', data.message || 'حدث خطأ أثناء حذف السجل');
+                }
+            } catch (error) {
+                showFeedback('error', 'حدث خطأ أثناء الاتصال بالخادم');
+            }
+        });
+    });
+
+    // عرض رسائل التنبيه
+    function showFeedback(type, message) {
+        formFeedback.className = `alert alert-${type === 'success' ? 'success' : 'danger'}`;
+        formFeedback.textContent = message;
+        formFeedback.classList.remove('d-none');
+
+        setTimeout(() => {
+            formFeedback.classList.add('d-none');
+        }, 3000);
+    }
 });

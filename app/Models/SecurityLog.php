@@ -37,6 +37,26 @@ class SecurityLog extends Model
         return $this->belongsTo(User::class);
     }
 
+    // الحصول على لون نوع الحدث
+    public function getEventTypeColorAttribute()
+    {
+        return match($this->event_type) {
+            'login' => 'success',
+            'logout' => 'info',
+            'failed_login' => 'danger',
+            'password_reset' => 'warning',
+            'profile_update' => 'primary',
+            'settings_change' => 'secondary',
+            default => 'dark'
+        };
+    }
+
+    // الحصول على حالة السجل
+    public function getStatusAttribute()
+    {
+        return $this->is_resolved ? 'تم الحل' : 'قيد المعالجة';
+    }
+
     // Scopes للبحث والتصفية
     public function scopeUnresolved($query)
     {
